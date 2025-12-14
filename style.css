@@ -1,91 +1,577 @@
+:root {
+    /* Core Colors */
+    --bg-primary: #000000;
+    --bg-surface: #141414;
+    /* Slightly lighter for contrast if needed */
+    --primary: #FDD835;
+    --primary-hover: #FBC02D;
+    --on-primary: #000000;
+
+    /* Text Colors */
+    --text-primary: #FFFFFF;
+    --text-secondary: #9AA0A6;
+    --text-disabled: #5F6368;
+
+    /* UI Elements */
+    --border-subtle: #3C4043;
+    --border-focus: #FDD835;
+
+    /* Grid & Cells */
+    --grid-line: #3C4043;
+    --cell-bg: #000000;
+    --cell-hover: rgba(253, 216, 53, 0.1);
+    --cell-selected: rgba(253, 216, 53, 0.25);
+    --cell-related: rgba(253, 216, 53, 0.08);
+    --cell-same-num: rgba(253, 216, 53, 0.4);
+    --cell-error: rgba(244, 67, 54, 0.2);
+    --text-error: #F44336;
+
+    /* Typography */
+    --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+    /* Spacing & Radius */
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 24px;
+    /* Pill shape */
+    --radius-xl: 32px;
+}
+
 * {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  text-align: center;
-  color: yellow;
-  user-select: none;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
 }
-html,body {
-  font-size: 62.5%;
-  background-color: black;
-  margin-top: 2rem;
+
+body {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: var(--font-family);
+    display: flex;
+    justify-content: center;
+    min-height: 100vh;
+    overflow-x: hidden;
 }
-#con {
-  width: 39rem;
-  height: 39rem;
+
+.app-container {
+    width: 100%;
+    max-width: 480px;
+    /* Mobile-first constraint */
+    padding: 24px 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
 }
-table {
-  margin: auto;
-  margin-top: 1rem;
+
+/* Header */
+header {
+    width: 100%;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
 }
-td {
-  width: 3.6rem;
-  height: 3.66rem;
-  border: rgba(255, 255, 0, 0.3) 1px solid;
-  background-color: black;
-  font-size: 2rem;
-}
-td:hover,
-button:hover {
-  background-color: rgba(236, 236, 209, 0.5) !important;
-}
+
 h1 {
-  background-color: rgba(255, 255, 0, 0.2);
-  padding: 0.9rem;
-  display: inline-block;
-  font-size: 2rem;
-}
-#popup,
-.blur {
-  position: absolute;
-  width: 30rem;
-  height: 31rem;
-  left: 50%;
-  transform: translate(-50%);
-  top: 5.7rem;
-}
-#popup {
-  z-index: 10;
-}
-.blur {
-  background-color: rgba(0, 0, 0, 0.8);
-  filter: blur(80px);
-  -webkit-filter: blur(10px);
-}
-button {
-  border: none;
-  background-color: rgba(255, 255, 0, 0.4);
-  margin-top: 12rem;
-  padding: 8px;
-  color: rgb(225, 255, 0);
-  border-radius: 2rem;
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    color: var(--text-primary);
 }
 
-h2 {
-  margin: 9rem 0 0 0;
-  font-size: xx-large;
-  color: red;
-}
-p {
-  font-size: 1.8rem;
-  color: white;
+.accent {
+    color: var(--primary);
 }
 
-.pc {
-  display: none;
+/* Stats Bar */
+.stats-bar {
+    display: flex;
+    justify-content: space-between;
+    padding: 0 12px;
 }
-.mistake {
-  width: 15rem;
-  font-size: 1.4rem;
-  display: inline-block;
-  background-color: rgba(255, 255, 0, 0.2);
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
 }
-#number {
-  width: 40rem;
+
+.label {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
-#number td {
-  border: none;
-  background-color: rgba(255, 255, 0, 0.3);
-  border-radius: 2rem;
+
+.value {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--primary);
+    font-variant-numeric: tabular-nums;
+}
+
+/* Game Area */
+.game-area {
+    width: 100%;
+    aspect-ratio: 1;
+    position: relative;
+}
+
+.grid-container {
+    display: grid;
+    grid-template-columns: repeat(9, 1fr);
+    grid-template-rows: repeat(9, 1fr);
+    width: 100%;
+    height: 100%;
+    background-color: var(--grid-line);
+    border: 2px solid var(--primary);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    gap: 1px;
+}
+
+.cell {
+    background-color: var(--cell-bg);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.5rem;
+    font-weight: 400;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
+    color: var(--primary);
+    position: relative;
+}
+
+/* Thicker borders for 3x3 boxes */
+.cell:nth-child(3n) {
+    border-right: 2px solid var(--grid-line);
+}
+
+.cell:nth-child(9n) {
+    border-right: none;
+}
+
+.cell:nth-child(n+19):nth-child(-n+27),
+.cell:nth-child(n+46):nth-child(-n+54) {
+    border-bottom: 2px solid var(--grid-line);
+}
+
+/* Cell States */
+.cell.initial {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.cell.selected {
+    background-color: var(--cell-selected) !important;
+    box-shadow: inset 0 0 0 2px var(--primary);
+}
+
+.cell.related {
+    background-color: var(--cell-related);
+}
+
+.cell.same-num {
+    background-color: var(--cell-same-num);
+    font-weight: 700;
+}
+
+.cell.error {
+    background-color: var(--cell-error);
+    color: var(--text-error);
+}
+
+/* Notes */
+.notes-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.note-num {
+    font-size: 0.6rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: var(--text-secondary);
+}
+
+/* Controls */
+.controls {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    position: relative;
+    z-index: 100;
+}
+
+/* Tools Bar (Undo, Notes, Hint, Settings) */
+.tools-bar {
+    display: flex;
+    justify-content: space-around;
+    padding: 0 10px;
+}
+
+.tool-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.tool-btn svg {
+    width: 28px;
+    height: 28px;
+    stroke-width: 1.5px;
+    transition: stroke 0.2s ease;
+}
+
+.tool-label {
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.tool-btn:hover {
+    color: var(--text-primary);
+}
+
+.tool-btn:hover svg {
+    stroke: var(--primary);
+}
+
+.tool-btn.active {
+    color: var(--primary);
+}
+
+.tool-btn.active svg {
+    stroke: var(--primary);
+    fill: rgba(253, 216, 53, 0.1);
+}
+
+.badge {
+    position: absolute;
+    top: -4px;
+    right: 4px;
+    background-color: var(--primary);
+    color: var(--on-primary);
+    font-size: 0.6rem;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 10px;
+}
+
+/* Numpad */
+.numpad {
+    display: grid;
+    grid-template-columns: repeat(9, 1fr);
+    gap: 8px;
+}
+
+.num-btn {
+    aspect-ratio: 1;
+    background: none;
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    color: var(--primary);
+    font-size: 1.5rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.num-btn:hover {
+    background-color: rgba(253, 216, 53, 0.1);
+    border-color: var(--primary);
+}
+
+.num-btn:active {
+    background-color: var(--primary);
+    color: var(--on-primary);
+}
+
+/* Action Buttons (New Game, Erase) */
+.action-buttons {
+    display: flex;
+    gap: 12px;
+    margin-top: 10px;
+}
+
+.action-btn {
+    flex: 1;
+    padding: 14px;
+    border: none;
+    border-radius: var(--radius-lg);
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.1s, opacity 0.2s;
+    background-color: var(--primary);
+    color: var(--on-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.action-btn.secondary {
+    background-color: transparent;
+    border: 2px solid var(--border-subtle);
+    color: var(--text-secondary);
+}
+
+.action-btn:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+}
+
+.action-btn:active {
+    transform: translateY(0);
+}
+
+/* Modals */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(5px);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal.active {
+    display: flex;
+    opacity: 1;
+    pointer-events: all;
+}
+
+.modal-content {
+    background-color: var(--bg-surface);
+    padding: 32px;
+    border-radius: var(--radius-xl);
+    text-align: center;
+    width: 90%;
+    max-width: 320px;
+    border: 1px solid var(--border-subtle);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.modal-content h2 {
+    color: var(--primary);
+    margin-bottom: 24px;
+    font-size: 1.75rem;
+}
+
+.difficulty-options {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.diff-btn {
+    background-color: transparent;
+    border: 1px solid var(--border-subtle);
+    color: var(--text-primary);
+    padding: 16px;
+    border-radius: var(--radius-lg);
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.diff-btn:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+    background-color: rgba(253, 216, 53, 0.05);
+}
+
+/* Gift Box */
+.gift-box {
+    margin: 20px 0;
+    font-size: 3rem;
+    animation: bounce 2s infinite;
+}
+
+@keyframes bounce {
+
+    0%,
+    20%,
+    50%,
+    80%,
+    100% {
+        transform: translateY(0);
+    }
+
+    40% {
+        transform: translateY(-20px);
+    }
+
+    60% {
+        transform: translateY(-10px);
+    }
+}
+
+/* Responsive */
+@media (max-width: 380px) {
+    .numpad {
+        gap: 4px;
+    }
+
+    .num-btn {
+        font-size: 1.2rem;
+    }
+
+    .tools-bar {
+        padding: 0;
+    }
+}
+
+/* Game Over Animation */
+.animation-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: var(--bg-primary);
+    z-index: 2000;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+.animation-container.active {
+    display: flex;
+}
+
+.scene {
+    position: relative;
+    width: 100%;
+    max-width: 500px;
+    height: 500px;
+}
+
+.prop {
+    position: absolute;
+}
+
+.trash-can {
+    bottom: 50px;
+    right: 50px;
+    width: 120px;
+    height: auto;
+    z-index: 10;
+}
+
+.toy-wrapper {
+    bottom: 50px;
+    left: 50px;
+    width: 150px;
+    height: 200px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.toy {
+    width: 100%;
+    height: auto;
+}
+
+.clock {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 60px;
+    height: 60px;
+}
+
+.clock-base {
+    width: 100%;
+    height: 100%;
+}
+
+.clock-time {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: red;
+    font-weight: bold;
+    font-size: 12px;
+    background: rgba(0, 0, 0, 0.5);
+    padding: 2px;
+    border-radius: 4px;
+}
+
+/* Animations */
+@keyframes throwClock {
+    0% {
+        transform: translate(0, 0) rotate(0deg);
+    }
+
+    20% {
+        transform: translate(-20px, 20px) rotate(-20deg);
+        /* Wind up */
+    }
+
+    40% {
+        transform: translate(100px, -150px) rotate(180deg);
+        /* Peak */
+    }
+
+    100% {
+        transform: translate(250px, 50px) rotate(720deg) scale(0.5);
+        /* Land in trash */
+        opacity: 0;
+    }
+}
+
+.clock.throwing {
+    animation: throwClock 1.5s ease-in-out forwards;
+}
+
+@keyframes toyThrow {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    20% {
+        transform: rotate(-10deg);
+    }
+
+    40% {
+        transform: rotate(20deg);
+    }
+
+    100% {
+        transform: rotate(0deg);
+    }
+}
+
+.toy-wrapper.throwing {
+    animation: toyThrow 1.5s ease-in-out;
 }

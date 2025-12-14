@@ -1,0 +1,252 @@
+/* Game Over Animation - Advanced Physics */
+
+/* Animation Container */
+.animation-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: var(--bg-primary);
+    z-index: 2000;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    perspective: 1000px;
+    /* For 3D effects */
+}
+
+.animation-container.active {
+    display: flex;
+}
+
+.scene {
+    position: relative;
+    width: 100%;
+    max-width: 500px;
+    height: 500px;
+}
+
+/* Props */
+.prop {
+    position: absolute;
+    will-change: transform;
+}
+
+.trash-can {
+    bottom: 50px;
+    right: 50px;
+    width: 140px;
+    height: auto;
+    z-index: 10;
+    transform-origin: bottom center;
+}
+
+.toy-wrapper {
+    bottom: 50px;
+    left: 50px;
+    width: 150px;
+    height: 200px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 20;
+}
+
+.toy {
+    width: 100%;
+    height: auto;
+    display: none;
+    /* Hide 2D toy if present */
+}
+
+#toy-3d-container {
+    width: 100%;
+    height: 100%;
+    /* border: 1px solid red; Debug */
+}
+
+/* Digital Timer */
+.clock {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80px;
+    height: 50px;
+    z-index: 30;
+}
+
+.clock-base {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.clock-time {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #FF0000;
+    /* LED Red */
+    font-family: 'Courier New', Courier, monospace;
+    /* Digital look */
+    font-weight: bold;
+    font-size: 16px;
+    text-shadow: 0 0 5px #FF0000;
+    /* Glow effect */
+    background: rgba(0, 0, 0, 0.8);
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+/* 
+   Throw Animation - Parabolic Arc 
+   Using separate X and Y animations for realistic gravity 
+*/
+@keyframes throwX {
+    0% {
+        transform: translateX(0);
+    }
+
+    100% {
+        transform: translateX(250px);
+        /* Distance to trash can */
+    }
+}
+
+@keyframes throwY {
+    0% {
+        transform: translateY(0);
+        animation-timing-function: cubic-bezier(0.1, 0.5, 0.1, 1);
+        /* Rise */
+    }
+
+    50% {
+        transform: translateY(-200px);
+        /* Peak height */
+        animation-timing-function: cubic-bezier(0.5, 0, 0.9, 0.5);
+        /* Fall */
+    }
+
+    100% {
+        transform: translateY(50px);
+        /* Landing height */
+    }
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(720deg);
+    }
+}
+
+@keyframes scaleDown {
+    0% {
+        transform: scale(1);
+    }
+
+    90% {
+        transform: scale(1);
+    }
+
+    100% {
+        transform: scale(0.5);
+        opacity: 0;
+    }
+}
+
+/* Combined Throw Class */
+.clock.throwing {
+    /* We need to wrap the clock in a container for X/Y separation or use a complex keyframe */
+    /* Simplified approach with cubic-bezier for arc */
+    animation:
+        throwArc 1.2s cubic-bezier(0.2, 0.8, 0.6, 1) forwards,
+        spin 1.2s linear forwards;
+}
+
+@keyframes throwArc {
+    0% {
+        transform: translate(-50%, -50%) rotate(0deg);
+    }
+
+    20% {
+        transform: translate(-80%, -30%) rotate(-20deg);
+        /* Wind up */
+    }
+
+    45% {
+        transform: translate(100%, -300%) rotate(180deg);
+        /* Peak */
+    }
+
+    100% {
+        transform: translate(300%, 50%) rotate(720deg) scale(0.5);
+        /* Land */
+        opacity: 0;
+    }
+}
+
+/* Toy Throw Action */
+@keyframes toyThrowAction {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    20% {
+        transform: rotate(-15deg);
+    }
+
+    /* Wind up */
+    40% {
+        transform: rotate(25deg);
+    }
+
+    /* Release */
+    60% {
+        transform: rotate(0deg);
+    }
+
+    /* Return */
+    100% {
+        transform: rotate(0deg);
+    }
+}
+
+.toy-wrapper.throwing {
+    animation: toyThrowAction 1.2s ease-in-out;
+}
+
+/* Trash Can Wobble */
+@keyframes wobble {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    25% {
+        transform: rotate(-5deg);
+    }
+
+    50% {
+        transform: rotate(5deg);
+    }
+
+    75% {
+        transform: rotate(-3deg);
+    }
+
+    100% {
+        transform: rotate(0deg);
+    }
+}
+
+.trash-can.wobble {
+    animation: wobble 0.5s ease-in-out;
+    transform-origin: bottom center;
+}

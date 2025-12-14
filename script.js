@@ -1,315 +1,526 @@
-var tdb = document.querySelectorAll("#con td");
-var number = document.querySelectorAll("#number td"),
-  pc = document.querySelector(".pc"),
-  mistake = document.querySelector(".mistake"),
-  span = document.querySelector(".timer"),
-  retry = document.querySelector("button"),
-  td = [],
-  b,
-  m = 0,
-  fo,
-  second = 0,
-  x = 0,
-  expert = [
-    "",
-    "9",
-    "",
-    "",
-    "",
-    "",
-    "3",
-    "",
-    "8",
-    "",
-    "",
-    "3",
-    "5",
-    "9",
-    "",
-    "6",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "7",
-    "",
-    "",
-    "",
-    "",
-    "2",
-    "8",
-    "",
-    "",
-    "",
-    "",
-    "5",
-    "",
-    "1",
-    "",
-    "3",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "4",
-    "",
-    "",
-    "",
-    "",
-    "6",
-    "",
-    "8",
-    "1",
-    "5",
-    "",
-    "",
-    "",
-    "2",
-    "7",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "9",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "1",
-    "",
-    "",
-    "6",
-    "",
-  ],
-  finishExpert = [
-    "2",
-    "9",
-    "1",
-    "7",
-    "6",
-    "4",
-    "3",
-    "5",
-    "8",
-    "7",
-    "4",
-    "3",
-    "5",
-    "9",
-    "8",
-    "6",
-    "1",
-    "2",
-    "6",
-    "5",
-    "8",
-    "1",
-    "3",
-    "2",
-    "7",
-    "4",
-    "9",
-    "9",
-    "6",
-    "2",
-    "8",
-    "7",
-    "1",
-    "4",
-    "3",
-    "5",
-    "8",
-    "1",
-    "5",
-    "3",
-    "4",
-    "9",
-    "2",
-    "7",
-    "6",
-    "4",
-    "3",
-    "7",
-    "2",
-    "5",
-    "6",
-    "9",
-    "8",
-    "1",
-    "5",
-    "8",
-    "6",
-    "4",
-    "2",
-    "7",
-    "1",
-    "9",
-    "3",
-    "1",
-    "7",
-    "9",
-    "6",
-    "8",
-    "3",
-    "5",
-    "2",
-    "4",
-    "3",
-    "2",
-    "4",
-    "9",
-    "1",
-    "5",
-    "8",
-    "6",
-    "7",
-  ];
-for (let i = 0; i < 81; i++) {
-  tdb[i].addEventListener("click", function () {
-    x = i;
-    for (let i = 0; i < 81; i++) {
-      tdb[i].style.backgroundColor = "rgba(255, 255, 0, 0)";
-      this.style.backgroundColor = "rgba(255, 255, 0, 0.2)";
+// Game State
+let game;
+let currentBoard = [];
+let solution = [];
+let notes = [];
+let history = [];
+let selectedCellIndex = -1;
+let mistakes = 0;
+let score = 0;
+let timerInterval;
+let seconds = 0;
+let isGameActive = false;
+let hintsUsed = 0;
+let game3D;
 
-      if (tdb[i].innerHTML == this.innerHTML && tdb[i].innerHTML) {
-        tdb[i].style.backgroundColor = "rgba(255, 255, 0, 0.2)";
+// Settings & Modes
+let isNotesMode = false;
+let settings = {
+  showTimer: true,
+  highlightRelated: true,
+  highlightSame: true
+};
+
+// DOM Elements
+const gridContainer = document.getElementById('sudoku-grid');
+const mistakesEl = document.getElementById('mistakes');
+const scoreEl = document.getElementById('score');
+const timerEl = document.getElementById('timer');
+const difficultyModal = document.getElementById('difficulty-modal');
+const winModal = document.getElementById('win-modal');
+const gameOverModal = document.getElementById('game-over-modal');
+const settingsModal = document.getElementById('settings-modal');
+const adModal = document.getElementById('ad-modal');
+const notesBtn = document.getElementById('notes-btn');
+const notesBadge = document.getElementById('notes-badge');
+
+// Initialize
+function init() {
+  try {
+    // Ensure Sudoku class exists
+    if (typeof Sudoku === 'undefined') {
+      console.error('Sudoku class not found!');
+      alert('Error: Sudoku logic failed to load. Please refresh.');
+      return;
+    }
+    game = new Sudoku();
+    setupEventListeners();
+
+    // Show difficulty modal initially
+    difficultyModal.classList.add('active');
+
+    // Init 3D Game
+    // Wait for module to load if not ready
+    if (window.Game3D) {
+      game3D = new window.Game3D('toy-3d-container');
+    } else {
+      // Retry after a moment if module hasn't loaded
+      setTimeout(() => {
+        if (window.Game3D) {
+          game3D = new window.Game3D('toy-3d-container');
+        } else {
+          console.error('Game3D not loaded');
+        }
+      }, 500);
+    }
+
+    console.log('Game initialized');
+  } catch (e) {
+    console.error('Init error:', e);
+    alert('Game initialization failed: ' + e.message);
+  }
+}
+
+function setupEventListeners() {
+  // Difficulty Selection
+  document.querySelectorAll('.diff-btn[data-diff]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      startGame(btn.dataset.diff);
+      difficultyModal.classList.remove('active');
+    });
+  });
+
+  // Numpad
+  document.querySelectorAll('.num-btn').forEach(btn => {
+    btn.addEventListener('click', () => handleInput(parseInt(btn.dataset.num)));
+  });
+
+  // Keyboard Input
+  document.addEventListener('keydown', (e) => {
+    if (!isGameActive) return;
+
+    if (e.key >= '1' && e.key <= '9') {
+      handleInput(parseInt(e.key));
+    } else if (e.key === 'Backspace' || e.key === 'Delete') {
+      handleInput(0);
+    } else if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+      moveSelection(e.key);
+    } else if (e.key.toLowerCase() === 'n') {
+      toggleNotesMode();
+    } else if (e.key.toLowerCase() === 'z' && (e.ctrlKey || e.metaKey)) {
+      undo();
+    }
+  });
+
+  // Action Buttons
+  document.getElementById('new-game-btn').addEventListener('click', () => {
+    difficultyModal.classList.add('active');
+  });
+
+  document.getElementById('erase-btn').addEventListener('click', () => handleInput(0));
+
+  document.getElementById('play-again-btn').addEventListener('click', () => {
+    winModal.classList.remove('active');
+    difficultyModal.classList.add('active');
+  });
+
+  document.getElementById('retry-btn').addEventListener('click', () => {
+    gameOverModal.classList.remove('active');
+    difficultyModal.classList.add('active');
+  });
+
+  // New Tools
+  document.getElementById('undo-btn').addEventListener('click', undo);
+  notesBtn.addEventListener('click', toggleNotesMode);
+  document.getElementById('hint-btn').addEventListener('click', useHint);
+  document.getElementById('settings-btn').addEventListener('click', () => settingsModal.classList.add('active'));
+
+  // Settings Modal
+  document.getElementById('close-settings').addEventListener('click', () => settingsModal.classList.remove('active'));
+
+  document.getElementById('toggle-timer').addEventListener('click', function () {
+    settings.showTimer = !settings.showTimer;
+    timerEl.parentElement.style.visibility = settings.showTimer ? 'visible' : 'hidden';
+    this.textContent = settings.showTimer ? 'Hide Timer' : 'Show Timer';
+  });
+
+  document.getElementById('toggle-highlight').addEventListener('click', function () {
+    settings.highlightRelated = !settings.highlightRelated;
+    settings.highlightSame = !settings.highlightSame;
+    this.textContent = settings.highlightRelated ? 'Disable Highlights' : 'Enable Highlights';
+    if (selectedCellIndex !== -1) selectCell(selectedCellIndex); // Refresh
+  });
+
+  // Ad Modal
+  document.getElementById('close-ad-btn').addEventListener('click', () => adModal.classList.remove('active'));
+  document.getElementById('watch-ad-btn').addEventListener('click', watchAd);
+}
+
+function startGame(difficulty) {
+  try {
+    console.log('Starting game with difficulty:', difficulty);
+    const data = game.generate(difficulty);
+    currentBoard = [...data.board];
+    solution = [...data.solution];
+    notes = Array(81).fill().map(() => new Set());
+    history = [];
+    mistakes = 0;
+    score = 0;
+    seconds = 0;
+    hintsUsed = 0; // Reset hints
+    isGameActive = true;
+    selectedCellIndex = -1;
+
+    updateStats();
+    startTimer();
+    renderGrid();
+    console.log('Game started successfully');
+  } catch (e) {
+    console.error('Start game error:', e);
+    alert('Failed to start game: ' + e.message);
+  }
+}
+
+function renderGrid() {
+  gridContainer.innerHTML = '';
+  for (let i = 0; i < 81; i++) {
+    const cell = document.createElement('div');
+    cell.classList.add('cell');
+    cell.dataset.index = i;
+
+    if (currentBoard[i] !== 0) {
+      cell.textContent = currentBoard[i];
+      cell.classList.add('initial');
+    } else {
+      // Create notes grid
+      const notesGrid = document.createElement('div');
+      notesGrid.classList.add('notes-grid');
+      for (let n = 1; n <= 9; n++) {
+        const noteEl = document.createElement('div');
+        noteEl.classList.add('note-num');
+        noteEl.dataset.note = n;
+        notesGrid.appendChild(noteEl);
       }
-      fo = this;
-      fo.style.backgroundColor = "rgba(236, 236, 209, 0.4)";
+      cell.appendChild(notesGrid);
     }
-  });
-}
-function input(e) {
-  for (let i = 0; i < 81; i++) {
-    tdb[i].style.backgroundColor = "rgba(255, 255, 0, 0)";
 
-    if (tdb[i].innerHTML == e && tdb[i].innerHTML) {
-      tdb[i].style.backgroundColor = "rgba(255, 255, 0, 0.3)";
-      fo.style.backgroundColor = "rgba(255, 255, 209, 0.4)";
-    }
+    cell.addEventListener('click', () => selectCell(i));
+    gridContainer.appendChild(cell);
+  }
+}
+
+function selectCell(index) {
+  if (!isGameActive) return;
+
+  // Deselect previous
+  if (selectedCellIndex !== -1) {
+    gridContainer.children[selectedCellIndex].classList.remove('selected');
   }
 
-  if (fo.innerHTML != finishExpert[x]) {
-    fo.style.color = "red";
-    m++;
-    mistake.innerHTML = `mistake ${m}/3`;
-    m > 2 ? (pc.style.display = "block") : 0;
+  // Clear highlights
+  document.querySelectorAll('.cell').forEach(c => {
+    c.classList.remove('related', 'same-num');
+  });
+
+  selectedCellIndex = index;
+  const cell = gridContainer.children[index];
+  cell.classList.add('selected');
+
+  // Highlight related cells (row, col, box)
+  if (settings.highlightRelated) highlightRelated(index);
+
+  // Highlight same numbers
+  const val = currentBoard[index];
+  if (val && settings.highlightSame) {
+    highlightSameNumbers(val.toString());
+  }
+}
+
+function highlightRelated(index) {
+  const row = Math.floor(index / 9);
+  const col = index % 9;
+  const boxStartRow = row - row % 3;
+  const boxStartCol = col - col % 3;
+
+  for (let i = 0; i < 81; i++) {
+    const r = Math.floor(i / 9);
+    const c = i % 9;
+
+    if (r === row || c === col ||
+      (r >= boxStartRow && r < boxStartRow + 3 && c >= boxStartCol && c < boxStartCol + 3)) {
+      gridContainer.children[i].classList.add('related');
+    }
+  }
+}
+
+function highlightSameNumbers(num) {
+  for (let i = 0; i < 81; i++) {
+    if (currentBoard[i] == num) {
+      gridContainer.children[i].classList.add('same-num');
+    }
+  }
+}
+
+function handleInput(num) {
+  console.log('handleInput called with:', num, 'GameActive:', isGameActive, 'Selected:', selectedCellIndex);
+  if (!isGameActive) {
+    console.warn('Game not active, ignoring input');
+    return;
+  }
+  if (selectedCellIndex === -1) {
+    console.warn('No cell selected, ignoring input');
+    return;
+  }
+
+  const cell = gridContainer.children[selectedCellIndex];
+
+  // Cannot edit initial cells
+  if (cell.classList.contains('initial')) {
+    console.warn('Cannot edit initial cell');
+    cell.animate([
+      { transform: 'translateX(0)' },
+      { transform: 'translateX(-2px)' },
+      { transform: 'translateX(2px)' },
+      { transform: 'translateX(0)' }
+    ], { duration: 100 });
+    return;
+  }
+
+  // Erase
+  if (num === 0) {
+    saveMove(selectedCellIndex, currentBoard[selectedCellIndex], new Set(notes[selectedCellIndex]), 'input');
+    currentBoard[selectedCellIndex] = 0;
+    notes[selectedCellIndex].clear();
+    renderCell(selectedCellIndex);
+    cell.classList.remove('error');
+    return;
+  }
+
+  if (isNotesMode) {
+    // Toggle Note
+    saveMove(selectedCellIndex, currentBoard[selectedCellIndex], new Set(notes[selectedCellIndex]), 'note');
+    if (notes[selectedCellIndex].has(num)) {
+      notes[selectedCellIndex].delete(num);
+    } else {
+      notes[selectedCellIndex].add(num);
+    }
+    renderCell(selectedCellIndex);
   } else {
-    fo.style.color = "yellow";
-  }
-}
-document.addEventListener("keypress", function (e) {
-  if (Number(e.key)) {
-    fo.innerHTML = e.key;
-    input(e.key);
-  }
-});
-for (let i = 0, j = 0; i < 81, j < 9; i += 9, j++) {
-  tdb[i + 2].style.borderRight = "1px solid yellow";
-  tdb[i + 6].style.borderLeft = "1px solid yellow";
-  tdb[j + 18].style.borderBottom = "1px solid yellow";
-  tdb[j + 45].style.borderBottom = "1px solid yellow";
-  number[j].addEventListener("click", function () {
-    fo.innerHTML = j + 1;
-    input(j + 1);
-  });
-}
-for (let k = 0; k < 81; k++) {
-  tdb[k].innerHTML = expert[k];
-}
+    // Enter Number
+    saveMove(selectedCellIndex, currentBoard[selectedCellIndex], new Set(notes[selectedCellIndex]), 'input');
 
-retry.addEventListener("click", function () {
-  for (let i = 0; i < 81; i++) {
-    tdb[i].style.backgroundColor = "rgba(255, 255, 0, 0)";
-  }
-  second = 0;
-  pc.style.display = "none";
-  m = 0;
-  for (let k = 0; k < 81; k++) {
-    tdb[k].innerHTML = expert[k];
-  }
-});
+    // Check correctness
+    if (num === solution[selectedCellIndex]) {
+      currentBoard[selectedCellIndex] = num;
+      notes[selectedCellIndex].clear(); // Clear notes on fill
+      renderCell(selectedCellIndex);
+      cell.classList.remove('error');
+      score += 50;
 
-console.log(parseInt("123", 10));
+      // Animation
+      cell.animate([
+        { transform: 'scale(1)' },
+        { transform: 'scale(1.2)' },
+        { transform: 'scale(1)' }
+      ], { duration: 200 });
 
-function timer() {
-  ++second;
-  span.innerHTML = `${pad(parseInt(second / 60))}:${pad(second % 60)}`;
-  function pad(val) {
-    var fullval = val + "";
-    return fullval.length < 2 ? (fullval = "0" + val) : val;
-  }
-}
-setInterval(timer, 1000);
+      if (settings.highlightSame) highlightSameNumbers(num.toString());
+      checkWin();
+    } else {
+      currentBoard[selectedCellIndex] = num;
+      renderCell(selectedCellIndex);
+      cell.classList.add('error');
+      mistakes++;
+      score = Math.max(0, score - 10);
 
-/*
-,r = [[],
-[],
-[],
-[],
-[],
-[],
-[],
-[],
-[]] 
+      // Shake animation
+      cell.animate([
+        { transform: 'translateX(0)' },
+        { transform: 'translateX(-5px)' },
+        { transform: 'translateX(5px)' },
+        { transform: 'translateX(0)' }
+      ], { duration: 200 });
 
-,c = [[],
-[],
-[],
-[],
-[],
-[],
-[],
-[],
-[]]
-
-function fill(){ 
-  b = 
-  [[td[0],td[1],td[2],  td[9], td[10],td[11],td[18],td[19],td[20]],
-  [td[3],td[4],td[5],   td[12],td[13],td[14],td[21],td[22],td[23]],
-  [td[6],td[7],td[8],   td[15],td[16],td[17],td[24],td[25],td[26]],
-  [td[27],td[28],td[29],td[36],td[37],td[38],td[45],td[46],td[47]],
-  [td[30],td[31],td[32],td[39],td[40],td[41],td[48],td[49],td[50]],
-  [td[33],td[34],td[35],td[42],td[43],td[44],td[51],td[52],td[53]],
-  [td[54],td[55],td[56],td[63],td[64],td[65],td[72],td[73],td[74]],
-  [td[57],td[58],td[59],td[66],td[67],td[68],td[75],td[76],td[77]],
-  [td[60],td[61],td[62],td[69],td[70],td[71],td[78],td[79],td[80]]]
-  
-  
-      for (let i = 0; i < 9; i++) {
-  r[0][i]=td[i]
-  r[1][i]=td[i+9]
-  r[2][i]=td[i+18]
-  r[3][i]=td[i+27]
-  r[4][i]=td[i+36]
-  r[5][i]=td[i+45]
-  r[6][i]=td[i+54]
-  r[7][i]=td[i+63]
-  r[8][i]=td[i+72]
-  }
-  
-    for (let i = 0, r=0; i < 81,r<9; i+=9,r++) {
-    
-    c[0][r]=td[i]
-    c[1][r]=td[i+1]
-    c[2][r]=td[i+2]
-    c[3][r]=td[i+3]
-    c[4][r]=td[i+4]
-    c[5][r]=td[i+5]
-    c[6][r]=td[i+6]
-    c[7][r]=td[i+7]
-    c[8][r]=td[i+8]   
+      if (mistakes >= 3) {
+        gameOver();
+      }
     }
-  }*/
+  }
+
+  updateStats();
+}
+
+function renderCell(index) {
+  const cell = gridContainer.children[index];
+  const val = currentBoard[index];
+
+  // Clear content
+  cell.textContent = '';
+
+  if (val !== 0) {
+    cell.textContent = val;
+  } else {
+    // Re-render notes
+    const notesGrid = document.createElement('div');
+    notesGrid.classList.add('notes-grid');
+    for (let n = 1; n <= 9; n++) {
+      const noteEl = document.createElement('div');
+      noteEl.classList.add('note-num');
+      if (notes[index].has(n)) {
+        noteEl.textContent = n;
+      }
+      notesGrid.appendChild(noteEl);
+    }
+    cell.appendChild(notesGrid);
+  }
+}
+
+function toggleNotesMode() {
+  isNotesMode = !isNotesMode;
+  notesBtn.classList.toggle('active', isNotesMode);
+  notesBadge.style.display = isNotesMode ? 'flex' : 'none';
+}
+
+function saveMove(index, prevVal, prevNotes, type) {
+  history.push({
+    index,
+    prevVal,
+    prevNotes,
+    type
+  });
+  if (history.length > 50) history.shift(); // Limit history
+}
+
+function undo() {
+  if (history.length === 0 || !isGameActive) return;
+
+  const move = history.pop();
+  currentBoard[move.index] = move.prevVal;
+  notes[move.index] = move.prevNotes;
+
+  const cell = gridContainer.children[move.index];
+  cell.classList.remove('error'); // Clear error state on undo
+
+  renderCell(move.index);
+  selectCell(move.index);
+}
+
+function useHint() {
+  if (!isGameActive || selectedCellIndex === -1) return;
+
+  const cell = gridContainer.children[selectedCellIndex];
+  if (currentBoard[selectedCellIndex] !== 0) return; // Already filled
+
+  if (hintsUsed > 0) {
+    adModal.classList.add('active');
+    return;
+  }
+
+  applyHint();
+}
+
+function watchAd() {
+  const btn = document.getElementById('watch-ad-btn');
+  const originalText = btn.textContent;
+  btn.textContent = 'Watching...';
+  btn.disabled = true;
+
+  // Simulate 2 second ad
+  setTimeout(() => {
+    adModal.classList.remove('active');
+    btn.textContent = originalText;
+    btn.disabled = false;
+    applyHint();
+  }, 2000);
+}
+
+function applyHint() {
+  const correctNum = solution[selectedCellIndex];
+
+  // Penalty logic (optional, keeping it simple for now)
+  // score = Math.max(0, score - 100);
+  // updateStats();
+
+  hintsUsed++;
+  handleInput(correctNum);
+}
+
+function moveSelection(key) {
+  if (selectedCellIndex === -1) {
+    selectCell(0);
+    return;
+  }
+
+  let row = Math.floor(selectedCellIndex / 9);
+  let col = selectedCellIndex % 9;
+
+  switch (key) {
+    case 'ArrowUp': row = Math.max(0, row - 1); break;
+    case 'ArrowDown': row = Math.min(8, row + 1); break;
+    case 'ArrowLeft': col = Math.max(0, col - 1); break;
+    case 'ArrowRight': col = Math.min(8, col + 1); break;
+  }
+
+  selectCell(row * 9 + col);
+}
+
+function updateStats() {
+  mistakesEl.textContent = `${mistakes}/3`;
+  scoreEl.textContent = score;
+}
+
+function startTimer() {
+  clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    seconds++;
+    const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+    const s = (seconds % 60).toString().padStart(2, '0');
+    timerEl.textContent = `${m}:${s}`;
+  }, 1000);
+}
+
+function checkWin() {
+  if (game.checkWin(currentBoard)) {
+    isGameActive = false;
+    clearInterval(timerInterval);
+    document.getElementById('final-score').textContent = score + (1000 - seconds); // Time bonus
+    document.getElementById('final-time').textContent = timerEl.textContent;
+    winModal.classList.add('active');
+  }
+}
+
+function gameOver() {
+  isGameActive = false;
+  clearInterval(timerInterval);
+
+  // Show Animation
+  const animContainer = document.getElementById('game-over-animation');
+  const animTime = document.getElementById('anim-time');
+  const animClock = document.getElementById('anim-clock');
+  const animToy = document.getElementById('anim-toy-wrapper');
+
+  // Set time
+  animTime.textContent = timerEl.textContent;
+
+  animContainer.classList.add('active');
+
+  // Resize 3D canvas now that container is visible
+  if (game3D) game3D.resize();
+
+  // Trigger animations
+  setTimeout(() => {
+    animClock.classList.add('throwing');
+
+    if (game3D) game3D.playGameOver();
+
+    // Wobble trash can on impact (approx 1.2s after throw starts)
+    setTimeout(() => {
+      const trashCan = document.getElementById('anim-trash-can');
+      trashCan.classList.add('wobble');
+    }, 1200);
+  }, 2000);
+
+  // End animation and show modal
+  setTimeout(() => {
+    animContainer.classList.remove('active');
+    animClock.classList.remove('throwing');
+
+    if (game3D) game3D.reset();
+
+    document.getElementById('anim-trash-can').classList.remove('wobble');
+    gameOverModal.classList.add('active');
+  }, 4500);
+}
+
+// Start
+init();
