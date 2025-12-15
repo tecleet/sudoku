@@ -1,5 +1,7 @@
 import { SceneManager } from './SceneManager.js';
-import { Environment } from './Environment.js';
+import { LightingStudio } from './LightingStudio.js';
+import { PostProcessor } from './PostProcessor.js';
+import { CameraDirector } from './CameraDirector.js';
 import { ToyActor } from './ToyActor.js';
 import { TrashCanActor } from './TrashCanActor.js';
 import { Effects } from './Effects.js';
@@ -8,7 +10,16 @@ import { AnimationController } from './AnimationController.js';
 export class Game3D {
     constructor(containerId) {
         this.sceneManager = new SceneManager(containerId);
-        this.environment = new Environment(this.sceneManager);
+
+        // New Studio Lighting (Replaces Environment)
+        this.lightingStudio = new LightingStudio(this.sceneManager);
+
+        // Post Processing
+        this.postProcessor = new PostProcessor(this.sceneManager);
+        this.sceneManager.setRenderCallback(() => this.postProcessor.render());
+
+        // Cinematic Camera
+        this.cameraDirector = new CameraDirector(this.sceneManager.camera);
 
         this.toy = new ToyActor();
         this.sceneManager.addActor(this.toy);
@@ -17,14 +28,14 @@ export class Game3D {
         this.sceneManager.addActor(this.trashCan);
 
         this.effects = new Effects(this.sceneManager);
-        // Add effects as an actor so it gets updated in the loop
         this.sceneManager.addActor(this.effects);
 
         this.animController = new AnimationController(
             this.sceneManager,
             this.toy,
             this.trashCan,
-            this.effects
+            this.effects,
+            this.cameraDirector
         );
 
         // Initial positions
@@ -35,6 +46,7 @@ export class Game3D {
         this.toy.reset();
         this.toy.mesh.position.set(0, 0, 0);
         this.trashCan.mesh.position.set(4, -2, -2);
+        this.cameraDirector.reset();
     }
 
     playGameOver() {

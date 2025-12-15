@@ -1,9 +1,10 @@
 export class AnimationController {
-    constructor(sceneManager, toy, trashCan, effects) {
+    constructor(sceneManager, toy, trashCan, effects, cameraDirector) {
         this.sceneManager = sceneManager;
         this.toy = toy;
         this.trashCan = trashCan;
         this.effects = effects;
+        this.cameraDirector = cameraDirector;
     }
 
     playGameOverSequence() {
@@ -19,9 +20,8 @@ export class AnimationController {
         this.trashCan.mesh.rotation.y = -Math.PI / 4;
 
         // Camera Start
-        const cam = this.sceneManager.camera;
-        cam.position.set(0, 2, 8);
-        cam.lookAt(0, 1, 0);
+        this.cameraDirector.reset();
+        this.cameraDirector.playIntro();
 
         // --- Sequence ---
 
@@ -80,13 +80,10 @@ export class AnimationController {
             this.effects.createExplosion(new THREE.Vector3(4, 0, -2), 0xff69b4, 30);
 
             // Camera Shake
-            gsap.to(cam.position, {
-                x: "+=0.2",
-                y: "+=0.2",
-                duration: 0.1,
-                yoyo: true,
-                repeat: 5
-            });
+            this.cameraDirector.shake(0.3, 0.5);
+
+            // Slow Motion Impact
+            gsap.to(gsap.globalTimeline, { timeScale: 0.1, duration: 0.1, yoyo: true, repeat: 1, onComplete: () => gsap.globalTimeline.timeScale(1) });
         }, "-=0.2"); // Slightly before end of jump
 
         // 5. Can Wobble
@@ -98,7 +95,8 @@ export class AnimationController {
             ease: "sine.inOut"
         }, "<");
 
-        // 6. Camera Zoom to Can
+        // 6. Camera Follow/Zoom to Can
+        const cam = this.sceneManager.camera;
         tl.to(cam.position, {
             x: 3,
             y: 1,

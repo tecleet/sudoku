@@ -12,6 +12,7 @@ export class SceneManager {
         this.clock = new THREE.Clock();
         this.actors = [];
         this.mixers = []; // For animation mixers if needed
+        this.externalRender = null;
 
         this.init();
     }
@@ -84,6 +85,16 @@ export class SceneManager {
         // Update mixers
         this.mixers.forEach(mixer => mixer.update(delta));
 
-        this.renderer.render(this.scene, this.camera);
+        this.mixers.forEach(mixer => mixer.update(delta));
+
+        if (this.externalRender) {
+            this.externalRender();
+        } else {
+            this.renderer.render(this.scene, this.camera);
+        }
+    }
+
+    setRenderCallback(callback) {
+        this.externalRender = callback;
     }
 }

@@ -10,11 +10,12 @@ export class ToyActor {
     createModel() {
         // Materials
         const pinkMat = new THREE.MeshPhysicalMaterial({
-            color: 0xff69b4,
-            roughness: 0.3,
+            color: 0xff1493, // Deep Pink
+            roughness: 0.1,  // Very smooth
             metalness: 0.1,
-            clearcoat: 0.5,
-            clearcoatRoughness: 0.1
+            clearcoat: 1.0,  // High gloss
+            clearcoatRoughness: 0.05,
+            reflectivity: 1.0
         });
 
         const eyeMat = new THREE.MeshBasicMaterial({ color: 0x000000 });

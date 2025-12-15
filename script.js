@@ -22,21 +22,13 @@ let settings = {
 };
 
 // DOM Elements
-const gridContainer = document.getElementById('sudoku-grid');
-const mistakesEl = document.getElementById('mistakes');
-const scoreEl = document.getElementById('score');
-const timerEl = document.getElementById('timer');
-const difficultyModal = document.getElementById('difficulty-modal');
-const winModal = document.getElementById('win-modal');
-const gameOverModal = document.getElementById('game-over-modal');
-const settingsModal = document.getElementById('settings-modal');
-const adModal = document.getElementById('ad-modal');
-const notesBtn = document.getElementById('notes-btn');
-const notesBadge = document.getElementById('notes-badge');
+let gridContainer, mistakesEl, scoreEl, timerEl, difficultyModal, winModal, gameOverModal, settingsModal, adModal, notesBtn, notesBadge;
 
 // Initialize
 function init() {
   try {
+    initDOM();
+
     // Ensure Sudoku class exists
     if (typeof Sudoku === 'undefined') {
       console.error('Sudoku class not found!');
@@ -47,22 +39,24 @@ function init() {
     setupEventListeners();
 
     // Show difficulty modal initially
-    difficultyModal.classList.add('active');
-
-    // Init 3D Game
-    // Wait for module to load if not ready
-    if (window.Game3D) {
-      game3D = new window.Game3D('toy-3d-container');
+    if (difficultyModal) {
+      difficultyModal.classList.add('active');
     } else {
-      // Retry after a moment if module hasn't loaded
-      setTimeout(() => {
-        if (window.Game3D) {
-          game3D = new window.Game3D('toy-3d-container');
-        } else {
-          console.error('Game3D not loaded');
-        }
-      }, 500);
+      console.error('Difficulty modal not found during init');
     }
+
+    // Init 3D Game with Polling
+    const initGame3D = (attempts = 0) => {
+      if (window.Game3D) {
+        game3D = new window.Game3D('toy-3d-container');
+        console.log('Game3D loaded successfully');
+      } else if (attempts < 20) { // Try for 10 seconds (20 * 500ms)
+        setTimeout(() => initGame3D(attempts + 1), 500);
+      } else {
+        console.error('Game3D failed to load after 10 seconds');
+      }
+    };
+    initGame3D();
 
     console.log('Game initialized');
   } catch (e) {
@@ -71,12 +65,43 @@ function init() {
   }
 }
 
+function initDOM() {
+  console.log('Initializing DOM elements...');
+  gridContainer = document.getElementById('sudoku-grid');
+  mistakesEl = document.getElementById('mistakes');
+  scoreEl = document.getElementById('score');
+  timerEl = document.getElementById('timer');
+  difficultyModal = document.getElementById('difficulty-modal');
+  winModal = document.getElementById('win-modal');
+  gameOverModal = document.getElementById('game-over-modal');
+  settingsModal = document.getElementById('settings-modal');
+  adModal = document.getElementById('ad-modal');
+  notesBtn = document.getElementById('notes-btn');
+  notesBadge = document.getElementById('notes-badge');
+
+  // Debug log for critical elements
+  if (!gridContainer) console.error('CRITICAL: sudoku-grid not found');
+  if (!difficultyModal) console.error('CRITICAL: difficulty-modal not found');
+  if (!document.getElementById('new-game-btn')) console.error('CRITICAL: new-game-btn not found');
+}
+
 function setupEventListeners() {
+  console.log('Setting up event listeners...');
+
+  const safeAdd = (id, evt, handler) => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener(evt, handler);
+    } else {
+      console.error(`Cannot setup '${evt}' listener: Element #${id} not found.`);
+    }
+  };
+
   // Difficulty Selection
   document.querySelectorAll('.diff-btn[data-diff]').forEach(btn => {
     btn.addEventListener('click', () => {
       startGame(btn.dataset.diff);
-      difficultyModal.classList.remove('active');
+      if (difficultyModal) difficultyModal.classList.remove('active');
     });
   });
 
@@ -103,38 +128,46 @@ function setupEventListeners() {
   });
 
   // Action Buttons
-  document.getElementById('new-game-btn').addEventListener('click', () => {
-    difficultyModal.classList.add('active');
+  safeAdd('new-game-btn', 'click', () => {
+    if (difficultyModal) difficultyModal.classList.add('active');
   });
 
-  document.getElementById('erase-btn').addEventListener('click', () => handleInput(0));
+  safeAdd('erase-btn', 'click', () => handleInput(0));
 
-  document.getElementById('play-again-btn').addEventListener('click', () => {
-    winModal.classList.remove('active');
-    difficultyModal.classList.add('active');
+  safeAdd('play-again-btn', 'click', () => {
+    if (winModal) winModal.classList.remove('active');
+    if (difficultyModal) difficultyModal.classList.add('active');
   });
 
-  document.getElementById('retry-btn').addEventListener('click', () => {
-    gameOverModal.classList.remove('active');
-    difficultyModal.classList.add('active');
+  safeAdd('retry-btn', 'click', () => {
+    if (gameOverModal) gameOverModal.classList.remove('active');
+    if (difficultyModal) difficultyModal.classList.add('active');
   });
 
   // New Tools
-  document.getElementById('undo-btn').addEventListener('click', undo);
-  notesBtn.addEventListener('click', toggleNotesMode);
-  document.getElementById('hint-btn').addEventListener('click', useHint);
-  document.getElementById('settings-btn').addEventListener('click', () => settingsModal.classList.add('active'));
+  safeAdd('undo-btn', 'click', undo);
+
+  if (notesBtn) {
+    notesBtn.addEventListener('click', toggleNotesMode);
+  } else {
+    console.error('notesBtn not initialized');
+  }
+
+  safeAdd('hint-btn', 'click', useHint);
+  safeAdd('settings-btn', 'click', () => { if (settingsModal) settingsModal.classList.add('active'); });
 
   // Settings Modal
-  document.getElementById('close-settings').addEventListener('click', () => settingsModal.classList.remove('active'));
+  safeAdd('close-settings', 'click', () => { if (settingsModal) settingsModal.classList.remove('active'); });
 
-  document.getElementById('toggle-timer').addEventListener('click', function () {
+  safeAdd('toggle-timer', 'click', function () {
     settings.showTimer = !settings.showTimer;
-    timerEl.parentElement.style.visibility = settings.showTimer ? 'visible' : 'hidden';
+    if (timerEl && timerEl.parentElement) {
+      timerEl.parentElement.style.visibility = settings.showTimer ? 'visible' : 'hidden';
+    }
     this.textContent = settings.showTimer ? 'Hide Timer' : 'Show Timer';
   });
 
-  document.getElementById('toggle-highlight').addEventListener('click', function () {
+  safeAdd('toggle-highlight', 'click', function () {
     settings.highlightRelated = !settings.highlightRelated;
     settings.highlightSame = !settings.highlightSame;
     this.textContent = settings.highlightRelated ? 'Disable Highlights' : 'Enable Highlights';
@@ -142,8 +175,10 @@ function setupEventListeners() {
   });
 
   // Ad Modal
-  document.getElementById('close-ad-btn').addEventListener('click', () => adModal.classList.remove('active'));
-  document.getElementById('watch-ad-btn').addEventListener('click', watchAd);
+  safeAdd('close-ad-btn', 'click', () => { if (adModal) adModal.classList.remove('active'); });
+  safeAdd('watch-ad-btn', 'click', watchAd);
+
+  console.log('Event listeners setup complete.');
 }
 
 function startGame(difficulty) {
@@ -523,4 +558,4 @@ function gameOver() {
 }
 
 // Start
-init();
+document.addEventListener('DOMContentLoaded', init);
